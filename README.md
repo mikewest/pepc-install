@@ -185,6 +185,36 @@ attribute to the element, and/or enriching the `promptaction` event with a
 `manifestID` property. Both would be small additions and fairly easily done.
 
 
+### What text should be in the button?
+
+I think from a standards perspective, this question will remain open. It might make
+sense to follow the suggestions sketched above, combining some action with the
+application's origin. That might set user expectations correctly. It might not make
+sense to do that at all, if we discover that users just want an "Install!" button
+and don't gain any value from the origin presentation in the button because they
+parse the origin representation in the installation dialog very carefully. It might
+make sense to render the app's chosen name if we have some reason to trust that it's
+accurate. It might make sense to do something completely different and more helpful
+to users than a simple button.
+
+In short, the button's rendering (and any interactions the user might have with it)
+are implementation defined. It's worth talking together about the considerations
+user agents should pay attention to when deciding how to render the button, but
+it seems both unlikely and unhelpful to specify the content of the button too
+carefully.
+
+
+### What if this is an app for the Donaudampfschiffahrtsgesellschaftskapitän?
+
+Words are sometimes long. It would be ideal for us to figure out clever ways of
+making even very long words fit into our UI, but certain German steam boat
+captains prior to 1991 might have had a hard time determining whether they were
+installing their association's app. User agents should consider how to render
+such names and/or origins, just as [they do elsewhere][url-display].
+
+[url-display]: https://chromium.googlesource.com/chromium/src/+/HEAD/docs/security/url_display_guidelines/url_display_guidelines.md
+
+
 Security & Privacy
 ------------------
 
