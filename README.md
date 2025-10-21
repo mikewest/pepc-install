@@ -45,7 +45,7 @@ make a good decision about the question such a prompt presents.
 
 From a user's perspective, this could render as a button with known text and iconography:
 
-![A button whose text reads "Install youtube.com", with an icon signifying the action of installation.](./install-youtube.png)
+<img alt='A button whose text reads "Install youtube.com", with an icon signifying the action of installation.' src='./install-youtube.png' height=36>
 
 ```html
 <install manifest="https://youtube.com/manifest.webmanifest">
@@ -56,7 +56,7 @@ From a user's perspective, this could render as a button with known text and ico
 Same-origin installations could plausibly be compressed to text signifying installation along with
 an icon (or, possibly just the icon?):
 
-![A button whose text reads "Install", with an icon signifying the action of installation.](./install-icon.png)
+<img alt='A button whose text reads "Install", with an icon signifying the action of installation.' src='./install-icon.png' height=36>
 
 ```html
 <install
