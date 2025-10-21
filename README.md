@@ -77,7 +77,10 @@ thinks most appropriate:
 If the specified PWA is already installed, these buttons could shift their presentation to represent
 launching the associated app with appropriate text and iconography. We shouldn't otherwise reveal
 distinctions between installed and uninstalled applications (_which means we need to be careful about
-side channels; width in particular_).
+side channels; width in particular_):
+
+<img alt='A button whose text reads "Launch youtube.com", with an icon signifying the exciting power of PWAs. Its width is the same as the "Install youtube.com" button, but the background is the green of success.' src='./launch-youtube.png' height=36>
+
 
 From a developer's perspective, this element would have a `manifest` element specifying the URL of
 the application manifest to be installed. It would offer event-driven hooks allowing developers to
