@@ -93,3 +93,30 @@ offering installation.
 [geolocation]: https://github.com/WICG/PEPC/blob/main/geolocation_explainer.md
 [mixin]: https://wicg.github.io/PEPC/permission-elements.html#permission-mixin
 [security]: https://github.com/WICG/PEPC/blob/main/explainer.md#security-abuse
+
+
+Alternatives
+------------
+
+* As discussed above, the [Web Install API][api] proposal offers developers great flexibility in
+  the ways in which they bring users into an installation flow. In my opinion, these (real!)
+  benefits to developers are outweighed by the stronger guarantees around a user's intentions
+  that we can provide via the user agent mediated approach proposed here. Particularly in this
+  case, where we've inculcated an "Install" button model through the development of application
+  storefronts across platforms, it seems quite reasonable indeed to create a trustworthy version
+  of that model for the web.
+
+  (_I'd more broadly claim that it is_ generally _desirable to avoid imperative models that enable
+  developer-driven timing of prompt presentation when it's possible to create a user-driven model
+  for the same capability. We can dramatically increase signal-to-noise for users by leaning
+  heavily upon the clear communication of user intent embodied in the PEPC-style approach._)
+
+* The style of approach described here could be spelled in a number of ways. The original API
+  proposal, for instance, suggests [`<a href="..." rel="install">`][rel] as a potential approach.
+  The specifics of that proposal give the user agent less control over the content and presentation
+  of the element, but have the substantial advantage of providing built-in progressive enhancement.
+  My opinion is that we'd be best served by minting an element which has the behavior we want, and
+  allowing developers to fill it with fallback content explicitly, but the `<a>`-based approach is
+  certainly worth keeping in mind.
+
+[rel]: https://github.com/MicrosoftEdge/MSEdgeExplainers/blob/main/WebInstall/explainer-current-doc.md#declarative-install
