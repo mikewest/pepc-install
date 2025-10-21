@@ -92,7 +92,7 @@ offering installation.
 [security]: https://github.com/WICG/PEPC/blob/main/explainer.md#security-abuse
 
 
-Please give me some some IDL and technical detail!
+Please give me some IDL and technical detail!
 --------------------------------------------------
 
 Ok. Here you go:
