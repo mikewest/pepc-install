@@ -1,0 +1,90 @@
+User-Initiated PWA Installation
+===============================
+
+A Problem
+---------
+
+Web applications can be installed, providing users with a more reliable and integrated experience
+alongside other applications they may use on a regular basis. This is generally considered to be
+fantastic, providing value to both users and developers.
+
+Today, the process of initiating an installation flow is somewhat fragmented; each user agent has
+created a set of entry points, some more discoverable and intuitive than others. The
+[Web Install API][api] aims to create a more consistent developer-facing story, providing an
+imperative API which allows websites to initiate an installation flow for an arbitrary application,
+enabling more seamless and intuitive experiences for users.
+
+Seamlessness, however, cuts both ways: making it easier to push installation prompts out to users
+risks creating new opportunities for annoyance or abuse. The proposal recognizes this risk,
+[suggesting][spam] [transient activation][click] and explicit delegation as requirements. These are
+potentially helpful, but don't actually do much to ensure that users are neither surprised,
+confused, nor annoyed by prompts when they appear. Top-level navigation is not a substantial
+barrier, and clicks of any sort can be intercepted for the API's purpose, regardless of what the
+user thinks they're clicking on.
+
+While it's certainly possible to layer other heuristics on top of the transient activation
+requirement to mitigate abuse (rate limits, crowd-sourced judgements, etc), it seems advisable to
+avoid the risk in the first place by shifting to a model that requires a stronger signal of user
+intent.
+
+[api]: https://github.com/MicrosoftEdge/MSEdgeExplainers/blob/main/WebInstall/explainer.md
+[spam]: https://github.com/MicrosoftEdge/MSEdgeExplainers/blob/main/WebInstall/explainer-current-doc.md#preventing-installation-prompt-spamming-from-third-parties
+[click]: https://html.spec.whatwg.org/multipage/interaction.html#activation-triggering-input-event
+
+A Proposal
+----------
+
+Rather than allowing developers to initiate the installation flow directly, we should provide
+developers with an `<install>` element which renders a button whose content and presentation is
+controlled by the user agent. Similar to other [permission elements][pepc] elements (e.g.
+[`<geolocation>`][geolocation]), the user agent's control over (and therefore _understanding of_)
+the element's content means that it can make plausible assumptions about a user's contextual
+intent. Users who click on a button labeled "Install 'Wonderful Application'" are unlikely to be
+surprised if an installation prompt for exactly that application appears, and they'll be primed to
+make a good decision about the question such a prompt presents.
+
+From a user's perspective, this could render as a button with known text and iconography:
+
+![A button whose text reads "Install youtube.com", with an icon signifying the action of installation.](./install-youtube.png)
+
+```html
+<install manifest="https://youtube.com/manifest.webmanifest">
+  [Fallback content goes here.]
+</install>
+```
+
+Same-origin installations could plausibly be compressed to text signifying installation along with
+an icon (or, possibly just the icon?):
+
+![A button whose text reads "Install", with an icon signifying the action of installation.](./install-icon.png)
+
+```html
+<install
+  <!--
+      the `manifest` attribute can be omitted for installations whose manifest is
+      specified in the page's `<link rel="manifest" ...>` declaration.
+  -->
+>
+  [Fallback content goes here.]
+</install>
+```
+
+If the specified PWA is already installed, these buttons could shift their presentation to represent
+launching the associated app with appropriate text and iconography.
+
+From a developer's perspective, this element would have a `manifest` element specifying the URL of
+the application manifest to be installed. It would offer event-driven hooks allowing developers to
+understand users' interactions (perhaps reusing [`InPagePermissionMixin`][mixin] concepts like
+`promptaction`, `promptdismiss`, and `validationstatuschange` events, `isValid` and `invalidReason`
+attributes, etc). Validation errors could include violations of the generally applicable
+[presentation restrictions][security] for permission elements, as well as data validation errors
+when processing the referenced manifest.
+
+That said, developers wouldn't actually need to hook into any of those attributes for the simplest
+cases: `<install manifest="..."></install>` would be enough for straightforward use cases of
+offering installation.
+
+[pepc]: https://github.com/WICG/PEPC/
+[geolocation]: https://github.com/WICG/PEPC/blob/main/geolocation_explainer.md
+[mixin]: https://wicg.github.io/PEPC/permission-elements.html#permission-mixin
+[security]: https://github.com/WICG/PEPC/blob/main/explainer.md#security-abuse
