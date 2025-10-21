@@ -204,7 +204,7 @@ it seems both unlikely and unhelpful to specify the content of the button too
 carefully.
 
 
-### What if this is an app for the Donaudampfschiffahrtsgesellschaftskapitän?
+### What if this is an app for a [Donaudampfschifffahrtsgesellschaftskapitän][german]?
 
 Words are sometimes long. It would be ideal for us to figure out clever ways of
 making even very long words fit into our UI, but certain German steam boat
@@ -212,6 +212,7 @@ captains prior to 1991 might have had a hard time determining whether they were
 installing their association's app. User agents should consider how to render
 such names and/or origins, just as [they do elsewhere][url-display].
 
+[german]: https://en.wiktionary.org/wiki/Donaudampfschifffahrtsgesellschaftskapit%C3%A4n
 [url-display]: https://chromium.googlesource.com/chromium/src/+/HEAD/docs/security/url_display_guidelines/url_display_guidelines.md
 
 
