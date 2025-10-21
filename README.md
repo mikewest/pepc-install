@@ -69,6 +69,11 @@ an icon (or, possibly just the icon?):
 </install>
 ```
 
+Clicking the button would result in an installation prompt in whatever form the user agent
+thinks most appropriate:
+
+![An installation prompt for `youtube.com`.](./install-prompt.png)
+
 If the specified PWA is already installed, these buttons could shift their presentation to represent
 launching the associated app with appropriate text and iconography.
 
