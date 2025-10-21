@@ -74,14 +74,6 @@ thinks most appropriate:
 
 ![An installation prompt for `youtube.com`.](./install-prompt.png)
 
-If the specified PWA is already installed, these buttons could shift their presentation to represent
-launching the associated app with appropriate text and iconography. We shouldn't otherwise reveal
-distinctions between installed and uninstalled applications (_which means we need to be careful about
-side channels; width in particular_):
-
-<img alt='A button whose text reads "Launch youtube.com", with an icon signifying the exciting power of PWAs. Its width is the same as the "Install youtube.com" button, but the background is the green of success.' src='./launch-youtube.png' height=36>
-
-
 From a developer's perspective, this element would have a `manifest` element specifying the URL of
 the application manifest to be installed. It would offer event-driven hooks allowing developers to
 understand users' interactions (perhaps reusing [`InPagePermissionMixin`][mixin] concepts like
@@ -159,6 +151,38 @@ wonderful! If not, we'll consider the `<install>` element invalid.
 [activate-geo]: https://wicg.github.io/PEPC/permission-elements.html#ref-for-dom-inpagepermissionmixin-features-slot%E2%91%A1%E2%93%AA
 [manifest-fetch]: https://html.spec.whatwg.org/multipage/links.html#link-type-manifest:linked-resource-fetch-setup-steps
 [manifest-process]: https://html.spec.whatwg.org/multipage/links.html#link-type-manifest:process-the-linked-resource
+
+Open Questions
+--------------
+
+### What do we do if the app is already installed?
+
+If the specified PWA is already installed, these buttons could shift their presentation to represent
+launching the associated app with appropriate text and iconography. We shouldn't otherwise reveal
+distinctions between installed and uninstalled applications (_which means we need to be careful about
+side channels; width in particular_):
+
+<img alt='A button whose text reads "Launch youtube.com", with an icon signifying the exciting power of PWAs. Its width is the same as the "Install youtube.com" button, but the background is the green of success.' src='./launch-youtube.png' height=36>
+
+As an alternative, they could render in some way that informed the user that installation already
+succeeded, and clicking could either be a no-op or launch the app:
+
+<img alt='A button whose text reads "youtube.com installed", with an icon signifying success.' src='./youtube-installed.png' height=36>
+
+
+### What about the manifest ID?
+
+The imperative proposal supports the assertion of a `manifest_id` during the call to
+`navigator.install()` in order to enforce a match between the asserted ID and the
+manifest, and resolves the promise with the installed ID. Given the notes about low
+usage of the attribute in existing manifests, it's unclear to me whether this needs
+to be part of an initial pass at this API.
+
+If not, we're done.
+
+If so, it's certainly possible for us to replicate this by adding a `manifest_id`
+attribute to the element, and/or enriching the `promptaction` event with a
+`manifestID` property. Both would be small additions and fairly easily done.
 
 
 Security & Privacy
