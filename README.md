@@ -36,7 +36,7 @@ A Proposal
 
 Rather than allowing developers to initiate the installation flow directly, we should provide
 developers with an `<install>` element which renders a button whose content and presentation is
-controlled by the user agent. Similar to other [permission elements][pepc] elements (e.g.
+controlled by the user agent. Similar to other [permission elements][pepc] (e.g.
 [`<geolocation>`][geolocation]), the user agent's control over (and therefore _understanding of_)
 the element's content means that it can make plausible assumptions about a user's contextual
 intent. Users who click on a button labeled "Install 'Wonderful Application'" are unlikely to be
@@ -75,7 +75,9 @@ thinks most appropriate:
 ![An installation prompt for `youtube.com`.](./install-prompt.png)
 
 If the specified PWA is already installed, these buttons could shift their presentation to represent
-launching the associated app with appropriate text and iconography.
+launching the associated app with appropriate text and iconography. We shouldn't otherwise reveal
+distinctions between installed and uninstalled applications (_which means we need to be careful about
+side channels; width in particular_).
 
 From a developer's perspective, this element would have a `manifest` element specifying the URL of
 the application manifest to be installed. It would offer event-driven hooks allowing developers to
@@ -93,6 +95,95 @@ offering installation.
 [geolocation]: https://github.com/WICG/PEPC/blob/main/geolocation_explainer.md
 [mixin]: https://wicg.github.io/PEPC/permission-elements.html#permission-mixin
 [security]: https://github.com/WICG/PEPC/blob/main/explainer.md#security-abuse
+
+
+Please give me some some IDL and technical detail!
+--------------------------------------------------
+
+Ok. Here you go:
+
+```
+[Exposed=Window]
+interface HTMLInstallElement : HTMLElement {
+  [HTMLConstructor] constructor();
+
+  [CEReactions, ReflectURL] attribute USVString manifest;
+};
+HTMLInstallElement implements InPagePermissionMixin;
+```
+
+The [`InPagePermissionMixin`][mixin] is defined as part of the general Permission
+Element proposal, and includes a few attributes and events. We'll reuse those here
+for consistency.
+
+* `isValid` will return a boolean: `true` if the element's presentation makes it a valid click
+  target for users (because the user agent has confidence that it's visible and comprehensible,
+  and that it's been in that state long enough to be reasonably reliably viewed and comprehended),
+  `false` otherwise.
+
+* `invalidReason` will return an enum specifying the reason the element is considered invalid.
+  _We'll likely want to add a value here regarding invalidity of the element's underlying data (for
+  those cases in which the manifest we're pointed towards is missing or invalid)._
+
+* `initialPermissionStatus` and `permissionStatus` will reflect the state of the `install` feature
+  (which we'll define somewhere as a policy-controlled feature with a default allowlist of
+  `'self'`).
+
+* `promptaction` events will be fired when the user finishes interacting with any installation
+  prompt triggered by activating the element.
+
+* Likewise, `promptdismiss` will be fired when users cancel or dismiss the installation prompt.
+
+* `validationstatuschange` events fire when the validation status changes (crazy, right?).
+
+The element's [activation behavior][activation behavior] is quite similar to other permission
+elements (e.g. [`<geolocation>`'s activation behavior][activate-geo]): we'll check to see whether
+the event is trustworthy, the element is valid, permission to `install` is available and so on.
+Then we'll trigger an installation prompt in an implementation defined way. This will result in
+the user making some decision, leading to either a `promptdismiss` or `promptaction` event firing
+on the element.
+
+We'll also need to define some fetching behavior in order to obtain the web application
+manifest specified in the `manifest` attribute (or, in that attribute's absence, the relevant
+`<link rel="manifest">` element. The steps here will be similar to those defined for
+[the "manifest" link type][manifest-fetch]. We'll fetch with an `initiator` and `destination`
+of `manifest`, `mode` of `cors`, and exclude credentials (we can add a `crossorigin` attribute if
+necessary, but it doesn't seem necessary to me at the moment). We'll then follow that element's
+[processing steps][manifest-process] to parse and validate the manifest. If we get a manifest back,
+wonderful! If not, we'll consider the `<install>` element invalid.
+
+[activation behavior]: https://dom.spec.whatwg.org/#eventtarget-activation-behavior
+[activate-geo]: https://wicg.github.io/PEPC/permission-elements.html#ref-for-dom-inpagepermissionmixin-features-slot%E2%91%A1%E2%93%AA
+[manifest-fetch]: https://html.spec.whatwg.org/multipage/links.html#link-type-manifest:linked-resource-fetch-setup-steps
+[manifest-process]: https://html.spec.whatwg.org/multipage/links.html#link-type-manifest:process-the-linked-resource
+
+
+Security & Privacy
+------------------
+
+* We don't generally consider the act of installation to be a security boundary today, though there
+  are capabilities that we only offer to installed applications (often around integration with the
+  native OS, ranging from `file_handlers` to homescreen icons), and some forms of friction that
+  some user agents reduce when applications are installed (notifications, badging, etc). It seems
+  likely to me that an imperative version of this capability will create some of the same incentives
+  for abuse that we've seen with notifications, which suggests that raising the bar for triggering
+  an installation prompt might be reasonable. This proposal does so in a way that seems to provide
+  additional confidence that the user actually wants to install something, and does so in a way that
+  seems relatively lightweight.
+
+* Cross-origin installation requires us to talk about one origin in the context of another. This is
+  somewhat difficult to do effectively.
+
+* The user-facing benefits claimed above depend entirely on the truth of the claim that users do see
+  and understand the element's representation. This means both that user agents need to do
+  appropriate research to ensure the pixels they present in the element are in fact reasonably
+  comprehensible, _and_ evaluate their installation flows to ensure that they set user expectations
+  correctly.
+
+* Sites which wish to ensure that users can only install their applications from their own origin
+  can do so by examining Fetch Metadata headers in the incoming request for a given manifest and
+  handle things appropriately in the case that `Sec-Fetch-Dest` is `manifest`, but `Sec-Fetch-Site`
+  is not `same-origin`.
 
 
 Alternatives
@@ -118,5 +209,11 @@ Alternatives
   My opinion is that we'd be best served by minting an element which has the behavior we want, and
   allowing developers to fill it with fallback content explicitly, but the `<a>`-based approach is
   certainly worth keeping in mind.
+
+* Given that the behavior discussed above would support both installation and launching, depending
+  on the application's installed state, some more generic name might be appropriate. `<pwa>` or
+  `<webapp>` could more broadly describe a potential range of behavior. I prefer `<install>`, as
+  launching seems like it's really just a privacy-preserving mechanism to align behavior without
+  revealing installation state, but another broader name could certainly be preferable.
 
 [rel]: https://github.com/MicrosoftEdge/MSEdgeExplainers/blob/main/WebInstall/explainer-current-doc.md#declarative-install
