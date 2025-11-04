@@ -1,0 +1,12 @@
+{
+  "name": "<install> Sample",
+  "id": "InstallElementSample",
+  "display": "standalone",
+  "start_url": "./index.html",
+  "theme_color": "#CCCCCC",
+  "icons": [
+    { "src": "48.png",  "sizes": "48x48" },
+    { "src": "192.png", "sizes": "192x192" },
+    { "src": "512.png", "sizes": "512x512" }
+  ]
+}

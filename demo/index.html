@@ -1,0 +1,33 @@
+<!doctype HTML>
+<html>
+  <head>
+    <title>Tiny &lt;install&gt; demo.</title>
+    <link rel="manifest" href="./manifest.webmanifest">
+    <style>
+      install::permission-icon {
+        height: 22px;
+        margin-inline-end: 0.5em;
+      }
+
+      install {
+        color: white;
+        font-size: 1em;
+        padding: 0.5rem 1rem;
+        border: none;
+        border-radius: 1em; 
+        background-color: rgb(10 87 208);
+      }
+    </style>
+  </head>
+  <body>
+    <h1><code>&lt;install&gt; Demo</code>
+    <h2>Current page:</h2>
+    <xmp><install></install></xmp>
+    <install></install>
+
+    <h2>Remote page:</h2>
+    <xmp><install manifest="..."></install></xmp>
+    <install manifest="https://www.youtube.com/manifest.webmanifest"></install>
+    <install manifest="https://www.youtube.com/"></install>
+  </body>
+</html>
