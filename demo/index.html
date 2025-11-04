@@ -17,10 +17,44 @@
         border-radius: 1em; 
         background-color: rgb(10 87 208);
       }
+
+      #warning {
+        display: none;
+      }
+      .no-install-element #warning {
+        display: block;
+        color: red;
+        background: hsl(60deg 100% 90%);
+        border: 1px solid hsl(40deg 100% 90%);
+        margin: 1.5em;
+        padding: 0.5em 1em;
+        position: relative;
+        margin-top: 2em;
+        padding-top: 1em;
+        padding-bottom: 1em;
+        max-width: 20em;
+      }
+        .no-install-element #warning::before {
+          color: yellow;
+          background: red;
+          padding: 0.15em 0.25em;
+          position: absolute;
+          top: -0.8em;
+          left: -0.8em;
+          content: '\26A0 Warning!';
+        }
     </style>
   </head>
   <body>
-    <h1><code>&lt;install&gt; Demo</code>
+    <h1><code><a href="https://github.com/mikewest/pepc-install">&lt;install&gt;</a> Demo</code></h1>
+    
+    <div id="warning">
+      <p>
+        This browser doesn't appear to support the <code>&lt;install&gt;</code> element,
+        which means the following demo will be <em>quite</em> uninteresting.
+      </p>
+    </div>
+
     <h2>Current page:</h2>
     <xmp><install></install></xmp>
     <install></install>
@@ -37,10 +71,14 @@
     <install manifest="https://kbhlee2121.github.io/pwa/web-install/index.html"></install>
 
     <script>
-      document.querySelectorAll('install').forEach(el => {
-        el.onpromptdismiss = console.log;
-        el.onpromptaction = console.log;
-      });
+      if ('HTMLInstallElement' in window) {
+        document.querySelectorAll('install').forEach(el => {
+          el.onpromptdismiss = console.log;
+          el.onpromptaction = console.log;
+        });
+      } else {
+        document.body.classList.add("no-install-element");
+      }
     </script>
   </body>
 </html>
