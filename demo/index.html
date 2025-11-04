@@ -35,5 +35,12 @@
          for the moment.
     -->
     <install manifest="https://kbhlee2121.github.io/pwa/web-install/index.html"></install>
+
+    <script>
+      document.querySelectorAll('install').forEach(el => {
+        el.onpromptdismiss = console.log;
+        el.onpromptaction = console.log;
+      });
+    </script>
   </body>
 </html>
