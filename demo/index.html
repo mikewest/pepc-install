@@ -27,7 +27,13 @@
 
     <h2>Remote page:</h2>
     <xmp><install manifest="..."></install></xmp>
-    <install manifest="https://www.youtube.com/manifest.webmanifest"></install>
-    <install manifest="https://www.youtube.com/"></install>
+    <!--
+         Ideally, we'd point to the manifest here. The prototype implementation in Chromium
+         is based on the Web Install API, which has a slightly different set of constraints
+         and expectations than the <install> proposal, expecting a page from which a manifest
+         can be inferred or extracted instead of a manifest. So, that's what we'll run with
+         for the moment.
+    -->
+    <install manifest="https://kbhlee2121.github.io/pwa/web-install/index.html"></install>
   </body>
 </html>
