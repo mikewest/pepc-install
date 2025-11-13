@@ -45,46 +45,63 @@ make a good decision about the question such a prompt presents.
 
 From a user's perspective, this could render as a button with known text and iconography:
 
-<img alt='A button whose text reads "Install youtube.com", with an icon signifying the action of installation.' src='./install-youtube.png' height=36>
+<img alt='A button whose text reads "Install", with an icon signifying the action of installation.' src='./install-initial.png'>
 
 ```html
-<install manifest="https://youtube.com/manifest.webmanifest">
+<install>
   [Fallback content goes here.]
 </install>
 ```
 
-Same-origin installations could plausibly be compressed to text signifying installation along with
-an icon (or, possibly just the icon?):
+Conceivably this could be extended to support a `src` attribute which would specify an external
+page or application to install (for example: micro-applications such as those offered by PowerBI).
+This would initially look the same as above, unless the user agent doesn't support the
+installation of applications from another source, in which case the fallback content might be
+presented instead
 
-<img alt='A button whose text reads "Install", with an icon signifying the action of installation.' src='./install-icon.png' height=36>
+<img alt='A button whose text reads "Install", with an icon signifying the action of installation.' src='./install-initial.png'>
 
 ```html
-<install
-  <!--
-      the `manifest` attribute can be omitted for installations whose manifest is
-      specified in the page's `<link rel="manifest" ...>` declaration.
-  -->
->
-  [Fallback content goes here.]
+<install src="https://music.youtube.com/">
+  <a href="https://music.youtube.com/" target="_blank">
+    Launch YouTube Music
+  </a>
 </install>
 ```
+<img alt='A hyperlink reading "Launch YouTube Music".' src='./install-not-supported.png'>
 
-Clicking the button would result in an installation prompt in whatever form the user agent
-thinks most appropriate:
+Once a user clicks the initial 'Install' button, the user agent will attempt to fetch necessary
+data, including the app manifest, to present detailed information about the app to be installed.
 
-![An installation prompt for `youtube.com`.](./install-prompt.png)
+Assuming the fetch is successful, the button will transform to present the title (possibly the
+localized title based on browser language) and origin on the button, requiring the user to 
+interact with it again to cause the installation prompt to appear:
 
-From a developer's perspective, this element would have a `manifest` element specifying the URL of
-the application manifest to be installed. It would offer event-driven hooks allowing developers to
-understand users' interactions (perhaps reusing [`InPagePermissionMixin`][mixin] concepts like
+<img alt='A button whose text reads "Install YouTube Music, from music.youtube.com", with an icon signifying the action of installation.' src='./install-loaded-manifest.png'>
+
+Clicking on this would cause the user agent to prompt once more to install. This mechanism of
+action permits the user agent to avoid unnecessary network requests before the user expresses
+an interest in installing, and it reduces the need for any kind of other explicit "permission"
+grant. 
+
+![An installation prompt for `YouTube Music`.](./dialog-ytmusic.png)
+
+Once the app is installed, the button could render as an equivalent 'Launch'-style button,
+indicating that the user agent is aware of the app in its local app database:
+
+<img alt='A button whose text reads "Launch YouTube Music, from music.youtube.com", with an icon signifying the action of launching.' src='./install-launch.png'>
+
+From a developer's perspective, this element would have an optional `src` attribute specifying 
+the URL of the application to be installed. It would offer event-driven hooks allowing developers 
+to understand users' interactions (perhaps reusing [`InPagePermissionMixin`][mixin] concepts like
 `promptaction`, `promptdismiss`, and `validationstatuschange` events, `isValid` and `invalidReason`
 attributes, etc). Validation errors could include violations of the generally applicable
 [presentation restrictions][security] for permission elements, as well as data validation errors
 when processing the referenced manifest.
 
 That said, developers wouldn't actually need to hook into any of those attributes for the simplest
-cases: `<install manifest="..."></install>` would be enough for straightforward use cases of
-offering installation.
+cases: `<install></install>` and `<install url="..."></install>` would be sufficient for 
+straightforward use cases of offering installation.
 
 [pepc]: https://github.com/WICG/PEPC/
 [geolocation]: https://github.com/WICG/PEPC/blob/main/geolocation_explainer.md
@@ -102,7 +119,7 @@ Ok. Here you go:
 interface HTMLInstallElement : HTMLElement {
   [HTMLConstructor] constructor();
 
-  [CEReactions, ReflectURL] attribute USVString manifest;
+  [CEReactions, ReflectURL] attribute USVString src;
 };
 HTMLInstallElement implements InPagePermissionMixin;
 ```
@@ -114,11 +131,12 @@ for consistency.
 * `isValid` will return a boolean: `true` if the element's presentation makes it a valid click
   target for users (because the user agent has confidence that it's visible and comprehensible,
   and that it's been in that state long enough to be reasonably reliably viewed and comprehended),
-  `false` otherwise.
+  `false` otherwise. (At initial release of this element, `isValid` will be `false` if the `src`
+  attribute is specified).
 
 * `invalidReason` will return an enum specifying the reason the element is considered invalid.
   _We'll likely want to add a value here regarding invalidity of the element's underlying data (for
-  those cases in which the manifest we're pointed towards is missing or invalid)._
+  those cases in which the URL we're pointed towards is missing or invalid)._
 
 * `initialPermissionStatus` and `permissionStatus` will reflect the state of the `install` feature
   (which we'll define somewhere as a policy-controlled feature with a default allowlist of
@@ -168,6 +186,11 @@ As an alternative, they could render in some way that informed the user that ins
 succeeded, and clicking could either be a no-op or launch the app:
 
 <img alt='A button whose text reads "youtube.com installed", with an icon signifying success.' src='./youtube-installed.png' height=36>
+
+*An aside: it is conceivably possible and likely that such applications may be able to reference
+the installation state of the other applications via the [getInstalledRelatedApps API](gIRA).*
+
+[gIRA]: https://developer.mozilla.org/en-US/docs/Web/API/Navigator/getInstalledRelatedApps
 
 
 ### What about the manifest ID?

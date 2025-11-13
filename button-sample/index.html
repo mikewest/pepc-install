@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Sample of the process of an install element</title>
+
+    <style>
+      .loading-ring {
+        width: 10px;
+        height: 10px;
+        margin: 0 auto;
+        padding: 10px;
+        border: 6px dashed #4b9cdb;
+        border-radius: 100%;
+        display: inline-block;
+        animation: loading 1.5s linear infinite;
+      }
+
+      @keyframes loading {
+        50% {
+          transform: rotate(180deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+
+      button.install {
+        background-color: #0b57d0;
+        color: white;
+        border: none;
+        padding: 10px 48px 10px 20px;
+        font-size: 16px;
+        border-radius: 20px;
+        position: relative;
+      }
+
+      button.install:not([disabled]) {
+        cursor: pointer;
+      }
+
+      button.install:not([disabled]) > div.loading-ring {
+        display: none;
+      }
+
+      button.install[disabled] {
+        filter: grayscale(0.5);
+      }
+
+      button.install:not([disabled]):hover {
+        filter: brightness(1.2);
+      }
+
+      button.install:not([disabled]):active {
+        filter: brightness(0.9);
+      }
+
+      button.install:not([disabled])::before {
+        content: "";
+        position: absolute;
+        background-image: url(md-download.png);
+        width: 24px;
+        height: 24px;
+        top: 6px;
+        right: 16px;
+        filter: grayscale(1) brightness(100);
+      }
+
+      button.install > div.loading-ring {
+        scale: 0.5;
+        position: absolute;
+      }
+
+      button.install:not(.full) > dt, button.install:not(.full) > dd {
+        display: none;
+      }
+
+      button.install.installing > div.loading-ring {
+        top: -2px;
+      }
+
+      /** READY_TO_INSTALL state */
+      button.install.full {
+        padding-right: 64px;
+      }
+      button.install.full > dt {
+        text-align: left;
+        font-size: 1.2em;
+      }
+      button.install.full > dd {
+        text-align: left;
+        margin-inline-start: 0;
+        font-size: 0.8em;
+      }
+      button.install.full:not([disabled])::before {
+        top: 16px;
+      }
+
+      /** INSTALLING state */
+      button.install.installing.full > div.loading-ring {
+        top: 6px;
+        right: 8px;
+      }
+
+      /** INSTALLED state - some states are duplicated from .install or .full */
+
+      button.installed {
+        background-color: #02a839;
+        color: white;
+        border: none;
+        padding: 10px 64px 10px 20px;
+        font-size: 16px;
+        border-radius: 20px;
+        position: relative;
+      }
+
+      button.installed:not([disabled]) {
+        cursor: pointer;
+      }
+
+      button.installed[disabled] {
+        filter: grayscale(0.5);
+      }
+
+      button.installed:not([disabled]):hover {
+        filter: brightness(1.1);
+      }
+
+      button.installed:not([disabled]):active {
+        filter: brightness(0.9);
+      }
+
+      button.installed > dt {
+        text-align: left;
+        font-size: 1.2em;
+      }
+      button.installed > dd {
+        text-align: left;
+        margin-inline-start: 0;
+        font-size: 0.8em;
+      }
+
+      button.installed:not([disabled])::before {
+        content: "";
+        position: absolute;
+        background-image: url(md-open-in-new.png);
+        width: 24px;
+        height: 24px;
+        top: 16px;
+        right: 16px;
+        filter: grayscale(1) brightness(100);
+      }
+
+      button.installed:not([disabled]) > div.loading-ring {
+        display: none;
+      }
+
+    </style>
+
+    <script type="module" src="install-button.js"></script>
+  </head>
+  <body>
+    <h1>Samples of the way the button states might look</h1>
+    <h2>Initial</h2>
+    <p><button class="install" type="button">Install</button></p>
+    <h2>Loading Manifest</h2>
+    <p>
+      <button disabled class="install installing">
+        Loading&hellip;
+        <div class="loading-ring"></div>
+      </button>
+    </p>
+    <h2>Ready to install</h2>
+    <p>
+      <button class="install full">
+        <dt>Install YouTube Music</dt>
+        <dd>from music.youtube.com</dd>
+        <div class="loading-ring"></div>
+      </button>
+    </p>
+    <h2>Installing</h2>
+    <p>
+      <button disabled class="install installing full">
+        <dt>Installing YouTube Music&hellip;</dt>
+        <dd>from music.youtube.com</dd>
+        <div class="loading-ring"></div>
+      </button>
+    </p>
+    <h2>Installed</h2>
+    <p>
+      <button class="installed">
+        <dt>Launch YouTube Music</dt>
+        <dd>from music.youtube.com</dd>
+        <div class="loading-ring"></div>
+      </button>
+    </p>
+    <h2>Failed</h2>
+    <p>
+      <button class="install failed">
+        Install
+        <div class="loading-ring"></div>
+      </button>
+    </p>
+    <h2>Not allowed</h2>
+    <p>
+      <a href="https://music.youtube.com/" target="_blank">
+        Launch YouTube Music
+      </a>
+    </p>
+
+    <h1>Example implementation</h1>
+    <app-install></app-install>
+
+    <h1>Example implementation with inner content</h1>
+    <app-install>
+      <a href="https://music.youtube.com/" target="_blank">
+        Launch YouTube Music
+      </a>
+    </app-install>
+
+    <h1>Example with src attribute</h1>
+    <app-install src="https://music.youtube.com/">
+      <a href="https://music.youtube.com/" target="_blank">
+        Launch YouTube Music
+      </a>
+    </app-install>
+  </body>
+</html>
