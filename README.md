@@ -20,9 +20,7 @@ However, an imperative API does not provide a strong signal of a user's intent t
 The Proposal
 ----------
 
-In addition to the imperative `navigator.install`, we should also provide developers with a declarative `<install>` element which renders a button whose content and presentation is controlled by the user agent. Similar to other [permission elements][pepc] (e.g. [`<geolocation>`][geolocation]), the user agent's control over (and therefore _understanding of_) the element's content means that it can make plausible assumptions about a user's contextual intent. Users who click on a button labeled "Install 'Wonderful Application'" are unlikely to be surprised if an installation prompt for exactly that application appears, and they'll be primed to make a good decision about the question such a prompt presents.
-
-Having two different entry points with various tradeoffs will let us best meet developer needs, while also gathering data about the general functionality, paying close attention for prompt abuse or annoyance.
+We can provide developers with a declarative `<install>` element which renders a button whose content and presentation is controlled by the user agent. Similar to other [permission elements][pepc] (e.g. [`<geolocation>`][geolocation]), the user agent's control over (and therefore _understanding of_) the element's content means that it can make plausible assumptions about a user's contextual intent. Users who click on a button labeled "Install 'Wonderful Application'" are unlikely to be surprised if an installation prompt for exactly that application appears, and they'll be primed to make a good decision about the question such a prompt presents.
 
 ## The Design - v1, simple button
 
