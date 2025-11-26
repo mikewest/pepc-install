@@ -10,97 +10,84 @@ fantastic, providing value to both users and developers.
 
 Today, the process of initiating an installation flow is somewhat fragmented; each user agent has
 created a set of entry points, some more discoverable and intuitive than others. The
-[Web Install API][api] aims to create a more consistent developer-facing story, providing an
-imperative API which allows websites to initiate an installation flow for an arbitrary application,
+[Web Install API][api], currently in Origin Trials, aims to create a more consistent developer-facing story, providing an imperative API which allows websites to initiate an installation flow for an arbitrary application,
 enabling more seamless and intuitive experiences for users.
 
-Seamlessness, however, cuts both ways: making it easier to push installation prompts out to users
-risks creating new opportunities for annoyance or abuse. The proposal recognizes this risk,
-[suggesting][spam] [transient activation][click] and explicit delegation as requirements. These are
-potentially helpful, but don't actually do much to ensure that users are neither surprised,
-confused, nor annoyed by prompts when they appear. Top-level navigation is not a substantial
-barrier, and clicks of any sort can be intercepted for the API's purpose, regardless of what the
-user thinks they're clicking on.
-
-While it's certainly possible to layer other heuristics on top of the transient activation
-requirement to mitigate abuse (rate limits, crowd-sourced judgements, etc), it seems advisable to
-avoid the risk in the first place by shifting to a model that requires a stronger signal of user
-intent.
+However, an imperative API does not provide a strong signal of a user's intent to perform the action, as the only restriction is transient activation. This opens the door for potential abuse or annoyance. See [risks of the imperative API](#risks-of-the-imperative-api).
 
 [api]: https://github.com/MicrosoftEdge/MSEdgeExplainers/blob/main/WebInstall/explainer.md
-[spam]: https://github.com/MicrosoftEdge/MSEdgeExplainers/blob/main/WebInstall/explainer-current-doc.md#preventing-installation-prompt-spamming-from-third-parties
-[click]: https://html.spec.whatwg.org/multipage/interaction.html#activation-triggering-input-event
 
-A Proposal
+The Proposal
 ----------
 
-Rather than allowing developers to initiate the installation flow directly, we should provide
-developers with an `<install>` element which renders a button whose content and presentation is
-controlled by the user agent. Similar to other [permission elements][pepc] (e.g.
-[`<geolocation>`][geolocation]), the user agent's control over (and therefore _understanding of_)
-the element's content means that it can make plausible assumptions about a user's contextual
-intent. Users who click on a button labeled "Install 'Wonderful Application'" are unlikely to be
-surprised if an installation prompt for exactly that application appears, and they'll be primed to
-make a good decision about the question such a prompt presents.
+We can provide developers with a declarative `<install>` element which renders a button whose content and presentation is controlled by the user agent. Similar to other [permission elements][pepc] (e.g. [`<geolocation>`][geolocation]), the user agent's control over (and therefore _understanding of_) the element's content means that it can make plausible assumptions about a user's contextual intent. Users who click on a button labeled "Install 'Wonderful Application'" are unlikely to be surprised if an installation prompt for exactly that application appears, and they'll be primed to make a good decision about the question such a prompt presents.
 
-From a user's perspective, this could render as a button with known text and iconography:
+## The Design - v1, simple button
 
-<img alt='A button whose text reads "Install", with an icon signifying the action of installation.' src='./install-initial.png'>
+### Element content
+
+The element will render standardized text and iconography controlled by the user agent, such as:
+
+<img alt='A button whose text reads "Install", with an icon signifying the action of installation.' src='./install-icon.png' width=200>
 
 ```html
-<install>
+<install installurl="https://music.youtube.com/"
+         manifestid="https://music.youtube.com/?source=pwa">
   [Fallback content goes here.]
 </install>
 ```
 
-Conceivably this could be extended to support a `src` attribute which would specify an external
-page or application to install (for example: micro-applications such as those offered by PowerBI).
-This would initially look the same as above, unless the user agent doesn't support the
-installation of applications from another source, in which case the fallback content might be
-presented instead
+### Attributes
 
-<img alt='A button whose text reads "Install", with an icon signifying the action of installation.' src='./install-initial.png'>
+`installurl` specifies the document to install (this is equivalent to the first parameter of the imperative version). This enables loading the document in the background and obtaining the information needed for the installation dialog. If unspecified, the current document will be installed.
 
-```html
-<install src="https://music.youtube.com/">
-  <a href="https://music.youtube.com/" target="_blank">
-    Launch YouTube Music
-  </a>
-</install>
-```
-<img alt='A hyperlink reading "Launch YouTube Music".' src='./install-not-supported.png'>
+`manifestid` is optional. If _unspecified_, the manifest referenced by the document at `installurl` must have a custom id defined. If specified, it must match the computed id of the site to be installed.
 
-Once a user clicks the initial 'Install' button, the user agent will attempt to fetch necessary
-data, including the app manifest, to present detailed information about the app to be installed.
+### Behavior
 
-Assuming the fetch is successful, the button will transform to present the title (possibly the
-localized title based on browser language) and origin on the button, requiring the user to 
-interact with it again to cause the installation prompt to appear:
-
-<img alt='A button whose text reads "Install YouTube Music, from music.youtube.com", with an icon signifying the action of installation.' src='./install-loaded-manifest.png'>
-
-Clicking on this would cause the user agent to prompt once more to install. This mechanism of
-action permits the user agent to avoid unnecessary network requests before the user expresses
-an interest in installing, and it reduces the need for any kind of other explicit "permission"
-grant. 
+On click, the user agent can display a confirmation prompt with the app's name, origin, and icon for increased security.
 
 ![An installation prompt for `YouTube Music`.](./dialog-ytmusic.png)
 
-Once the app is installed, the button could render as an equivalent 'Launch'-style button,
-indicating that the user agent is aware of the app in its local app database:
+### Why is a simple button sufficient?
 
-<img alt='A button whose text reads "Launch YouTube Music, from music.youtube.com", with an icon signifying the action of launching.' src='./install-launch.png'>
+The initial design is deliberately simple, as the primary goal is to gather usage data -- How useful do web developers find a declarative installation method, given certain style restrictions? 
 
-From a developer's perspective, this element would have an optional `src` attribute specifying 
-the URL of the application to be installed. It would offer event-driven hooks allowing developers 
-to understand users' interactions (perhaps reusing [`InPagePermissionMixin`][mixin] concepts like
-`promptaction`, `promptdismiss`, and `validationstatuschange` events, `isValid` and `invalidReason`
-attributes, etc). Validation errors could include violations of the generally applicable
-[presentation restrictions][security] for permission elements, as well as data validation errors
-when processing the referenced manifest.
+At the same time, we also believe the simple button is a sufficient signal of user intent. The original premise of PEPC is that a standardized label and icon signal a user's intent to perform a permission-related action. In this case, the user indicates their intent to install content by clicking on the element, and then the user agent can present more detailed information for evaluation and final confirmation.
+
+We see value in including app-specific text and iconography, and potentially skipping the secondary confirmation UI entirely, but this introduces a variety of concerns. To avoid scope creep, this has been moved to [Future Work](#custom-information-in-button), where it can be addressed while we're gathering feedback on the element's overall shape.
+
+It's worth noting that the button's exact rendering may eventually be useful ambiguity from a standards perspective. It would allow each user agent to decide what information they need, and how to address the above concerns.
+
+### Fallback content
+
+If the user agent doesn't support installation, present a simple link:
+
+<img alt='A hyperlink reading "Launch YouTube Music".' src='./install-not-supported.png'>
+
+```html
+  <install installurl="https://music.youtube.com/"
+           manifestid="https://music.youtube.com/?source=pwa">
+    <a href="https://music.youtube.com/" target="_blank">
+      Launch YouTube Music
+    </a>
+  </install>
+```
+
+### What if the app is already installed?
+
+The element can transform into a simple 'Launch'-style button, a highly requested feature from web developers. However, we must ensure developers cannot detect the change in the element's content to avoid fingerprinting concerns. This means being careful about side channels, particularly width.
+
+<img alt='A button whose text reads "Launch YouTube Music, from music.youtube.com", with an icon signifying the action of launching.' src='./launch-simple.png' width=200>
+
+## Error handling
+
+The element offers event-driven hooks allowing developers to understand users' interactions, reusing [`InPagePermissionMixin`][mixin] concepts like `promptaction`, `promptdismiss`, and `validationstatuschange` events, `isValid` and `invalidReason` attributes, etc. Additional events will be needed for failures related to manifest fetching/parsing.
+
+Validation errors could include violations of the generally applicable [presentation restrictions][security] for permission elements, as well as data validation errors when processing the referenced manifest.
 
 That said, developers wouldn't actually need to hook into any of those attributes for the simplest
-cases: `<install></install>` and `<install url="..."></install>` would be sufficient for 
+cases: `<install installurl="https://example.com/"></install>` would be sufficient for 
 straightforward use cases of offering installation.
 
 [pepc]: https://github.com/WICG/PEPC/
@@ -119,7 +106,8 @@ Ok. Here you go:
 interface HTMLInstallElement : HTMLElement {
   [HTMLConstructor] constructor();
 
-  [CEReactions, ReflectURL] attribute USVString src;
+  [CEReactions, ReflectURL] attribute USVString installurl;
+  [CEReactions] attribute USVString manifestid;
 };
 HTMLInstallElement implements InPagePermissionMixin;
 ```
@@ -131,12 +119,11 @@ for consistency.
 * `isValid` will return a boolean: `true` if the element's presentation makes it a valid click
   target for users (because the user agent has confidence that it's visible and comprehensible,
   and that it's been in that state long enough to be reasonably reliably viewed and comprehended),
-  `false` otherwise. (At initial release of this element, `isValid` will be `false` if the `src`
-  attribute is specified).
+  `false` otherwise.
 
-* `invalidReason` will return an enum specifying the reason the element is considered invalid.
-  _We'll likely want to add a value here regarding invalidity of the element's underlying data (for
-  those cases in which the URL we're pointed towards is missing or invalid)._
+* `invalidReason` will return an enum specifying the reason the element is considered invalid,
+  including invalidity of the element's underlying data (for cases in which the URL is missing 
+  or invalid, or manifest fetching/parsing fails).
 
 * `initialPermissionStatus` and `permissionStatus` will reflect the state of the `install` feature
   (which we'll define somewhere as a policy-controlled feature with a default allowlist of
@@ -156,87 +143,40 @@ Then we'll trigger an installation prompt in an implementation defined way. This
 the user making some decision, leading to either a `promptdismiss` or `promptaction` event firing
 on the element.
 
-We'll also need to define some fetching behavior in order to obtain the web application
-manifest specified in the `manifest` attribute (or, in that attribute's absence, the relevant
-`<link rel="manifest">` element. The steps here will be similar to those defined for
-[the "manifest" link type][manifest-fetch]. We'll fetch with an `initiator` and `destination`
-of `manifest`, `mode` of `cors`, and exclude credentials (we can add a `crossorigin` attribute if
-necessary, but it doesn't seem necessary to me at the moment). We'll then follow that element's
-[processing steps][manifest-process] to parse and validate the manifest. If we get a manifest back,
-wonderful! If not, we'll consider the `<install>` element invalid.
+The element hooks directly into the backend of navigator.install. When clicked, it will 
+load the `installurl` in the background to obtain the web application manifest and related 
+resources needed for the installation dialog. The steps here will be similar to those defined 
+for [the "manifest" link type][manifest-fetch], fetching and processing the manifest according 
+to its [processing steps][manifest-process]. If we get a valid manifest back, the installation 
+dialog is presented. If not, an error event is fired and the `<install>` element reports the 
+error appropriately.
 
 [activation behavior]: https://dom.spec.whatwg.org/#eventtarget-activation-behavior
 [activate-geo]: https://wicg.github.io/PEPC/permission-elements.html#ref-for-dom-inpagepermissionmixin-features-slot%E2%91%A1%E2%93%AA
 [manifest-fetch]: https://html.spec.whatwg.org/multipage/links.html#link-type-manifest:linked-resource-fetch-setup-steps
 [manifest-process]: https://html.spec.whatwg.org/multipage/links.html#link-type-manifest:process-the-linked-resource
 
+## Future Work
+
+The following features are planned for future iterations:
+
+### Custom Information in Button
+
+Rendering the app name, origin, or icon in the install element would provide an even stronger signal of user intent, but also introduces a variety of complications, such as:
+- **Performance:** When and how to get the information to show in the button
+- **UX:** Whether to use a two-tap flow (tap 1 loads info, tap 2 installs)
+- **Security:** Long app names. See [handling very long app names](#what-if-this-is-an-app-for-a-donaudampfschifffahrtsgesellschaftskapitän). Is the secondary installation confirmation prompt necessary?
+- **Styling/Accessibility:** App icon contrast ratios. Button layout/width.
+
+We believe it's worth it to solve these problems, but don't think it should delay gathering initial feedback.
+
+### Potential Additional Attributes
+
+- `manifesturl`: Link to the manifest file
+- `includeicon`: If specified, fetches and renders the app's icon (in addition to the install icon)
+
 Open Questions
 --------------
-
-### What do we do if the app is already installed?
-
-If the specified PWA is already installed, these buttons could shift their presentation to represent
-launching the associated app with appropriate text and iconography. We shouldn't otherwise reveal
-distinctions between installed and uninstalled applications (_which means we need to be careful about
-side channels; width in particular_):
-
-<img alt='A button whose text reads "Launch youtube.com", with an icon signifying the exciting power of PWAs. Its width is the same as the "Install youtube.com" button, but the background is the green of success.' src='./launch-youtube.png' height=36>
-
-As an alternative, they could render in some way that informed the user that installation already
-succeeded, and clicking could either be a no-op or launch the app:
-
-<img alt='A button whose text reads "youtube.com installed", with an icon signifying success.' src='./youtube-installed.png' height=36>
-
-*An aside: it is conceivably possible and likely that such applications may be able to reference
-the installation state of the other applications via the [getInstalledRelatedApps API](gIRA).*
-
-[gIRA]: https://developer.mozilla.org/en-US/docs/Web/API/Navigator/getInstalledRelatedApps
-
-
-### What about the manifest ID?
-
-The imperative proposal supports the assertion of a `manifest_id` during the call to
-`navigator.install()` in order to enforce a match between the asserted ID and the
-manifest, and resolves the promise with the installed ID. Given the notes about low
-usage of the attribute in existing manifests, it's unclear to me whether this needs
-to be part of an initial pass at this API.
-
-If not, we're done.
-
-If so, it's certainly possible for us to replicate this by adding a `manifest_id`
-attribute to the element, and/or enriching the `promptaction` event with a
-`manifestID` property. Both would be small additions and fairly easily done.
-
-
-### What text should be in the button?
-
-I think from a standards perspective, this question will remain open. It might make
-sense to follow the suggestions sketched above, combining some action with the
-application's origin. That might set user expectations correctly. It might not make
-sense to do that at all, if we discover that users just want an "Install!" button
-and don't gain any value from the origin presentation in the button because they
-parse the origin representation in the installation dialog very carefully. It might
-make sense to render the app's chosen name if we have some reason to trust that it's
-accurate. It might make sense to do something completely different and more helpful
-to users than a simple button.
-
-In short, the button's rendering (and any interactions the user might have with it)
-are implementation defined. It's worth talking together about the considerations
-user agents should pay attention to when deciding how to render the button, but
-it seems both unlikely and unhelpful to specify the content of the button too
-carefully.
-
-
-### What if this is an app for a [Donaudampfschifffahrtsgesellschaftskapitän][german]?
-
-Words are sometimes long. It would be ideal for us to figure out clever ways of
-making even very long words fit into our UI, but certain German steam boat
-captains prior to 1991 might have had a hard time determining whether they were
-installing their association's app. User agents should consider how to render
-such names and/or origins, just as [they do elsewhere][url-display].
-
-[german]: https://en.wiktionary.org/wiki/Donaudampfschifffahrtsgesellschaftskapit%C3%A4n
-[url-display]: https://chromium.googlesource.com/chromium/src/+/HEAD/docs/security/url_display_guidelines/url_display_guidelines.md
 
 
 Security & Privacy
@@ -266,30 +206,33 @@ Security & Privacy
   handle things appropriately in the case that `Sec-Fetch-Dest` is `manifest`, but `Sec-Fetch-Site`
   is not `same-origin`.
 
+### Risks of the imperative API
+
+Security and privacy concerns were raised that `navigator.install` makes it easier to push installation prompts out to users, and risks creating new opportunities for annoyance or abuse. The imperative proposal recognizes this risk, [suggesting][spam] [transient activation][click] and explicit delegation as requirements. These are
+potentially helpful, but don't actually do much to ensure that users are neither surprised,
+confused, nor annoyed by prompts when they appear. Top-level navigation is not a substantial
+barrier, and clicks of any sort can be intercepted for the API's purpose, regardless of what the
+user thinks they're clicking on.
+
+While it's certainly possible to layer other heuristics on top of the transient activation
+requirement to mitigate abuse (rate limits, crowd-sourced judgements, etc), it seems advisable to
+avoid the risk in the first place by shifting to a model that requires a stronger signal of user
+intent.
+
+[api]: https://github.com/MicrosoftEdge/MSEdgeExplainers/blob/main/WebInstall/explainer.md
+[spam]: https://github.com/MicrosoftEdge/MSEdgeExplainers/blob/main/WebInstall/explainer-current-doc.md#preventing-installation-prompt-spamming-from-third-parties
+[click]: https://html.spec.whatwg.org/multipage/interaction.html#activation-triggering-input-event
+
+### What if this is an app for a [Donaudampfschifffahrtsgesellschaftskapitän][german]?
+
+User agents will need to consider how to handle very long words, including appropriate resizing, eliding, and truncation logic (similar to what the installation dialog already implements). User agents should apply the same considerations they use [elsewhere][url-display] for displaying origins and names.
+
+[german]: https://en.wiktionary.org/wiki/Donaudampfschifffahrtsgesellschaftskapit%C3%A4n
+[url-display]: https://chromium.googlesource.com/chromium/src/+/HEAD/docs/security/url_display_guidelines/url_display_guidelines.md
+
 
 Alternatives
 ------------
-
-* As discussed above, the [Web Install API][api] proposal offers developers great flexibility in
-  the ways in which they bring users into an installation flow. In my opinion, these (real!)
-  benefits to developers are outweighed by the stronger guarantees around a user's intentions
-  that we can provide via the user agent mediated approach proposed here. Particularly in this
-  case, where we've inculcated an "Install" button model through the development of application
-  storefronts across platforms, it seems quite reasonable indeed to create a trustworthy version
-  of that model for the web.
-
-  (_I'd more broadly claim that it is_ generally _desirable to avoid imperative models that enable
-  developer-driven timing of prompt presentation when it's possible to create a user-driven model
-  for the same capability. We can dramatically increase signal-to-noise for users by leaning
-  heavily upon the clear communication of user intent embodied in the PEPC-style approach._)
-
-* The style of approach described here could be spelled in a number of ways. The original API
-  proposal, for instance, suggests [`<a href="..." rel="install">`][rel] as a potential approach.
-  The specifics of that proposal give the user agent less control over the content and presentation
-  of the element, but have the substantial advantage of providing built-in progressive enhancement.
-  My opinion is that we'd be best served by minting an element which has the behavior we want, and
-  allowing developers to fill it with fallback content explicitly, but the `<a>`-based approach is
-  certainly worth keeping in mind.
 
 * Given that the behavior discussed above would support both installation and launching, depending
   on the application's installed state, some more generic name might be appropriate. `<pwa>` or
