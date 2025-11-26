@@ -41,7 +41,7 @@ The element will render standardized text and iconography controlled by the user
 
 `installurl` specifies the document to install (this is equivalent to the first parameter of the imperative version). This enables loading the document in the background and obtaining the information needed for the installation dialog. If unspecified, the current document will be installed.
 
-`manifestid` is optional. If _unspecified_, the manifest at `installurl` must have a custom id defined. If specified, it must match the computed id of the site to be installed.
+`manifestid` is optional. If _unspecified_, the manifest referenced by the document at `installurl` must have a custom id defined. If specified, it must match the computed id of the site to be installed.
 
 ### Behavior
 
