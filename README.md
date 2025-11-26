@@ -59,7 +59,7 @@ At the same time, we also believe the simple button is a sufficient signal of us
 
 We see value in including app-specific text and iconography, and potentially skipping the secondary confirmation UI entirely, but this introduces a variety of concerns. To avoid scope creep, this has been moved to [Future Work](#custom-information-in-button), where it can be addressed while we're gathering feedback on the element's overall shape.
 
-> It's worth noting that the button's exact rendering may eventually be useful ambiguity from a standards perspective. It would allow each user agent to decide what information they need, and how to address the above concerns.
+It's worth noting that the button's exact rendering may eventually be useful ambiguity from a standards perspective. It would allow each user agent to decide what information they need, and how to address the above concerns.
 
 ### Fallback content
 
@@ -68,9 +68,12 @@ If the user agent doesn't support installation, present a simple link:
 <img alt='A hyperlink reading "Launch YouTube Music".' src='./install-not-supported.png'>
 
 ```html
-  <a href="https://music.youtube.com/" target="_blank">
-    Launch YouTube Music
-  </a>
+  <install installurl="https://music.youtube.com/"
+           manifestid="https://music.youtube.com/?source=pwa">
+    <a href="https://music.youtube.com/" target="_blank">
+      Launch YouTube Music
+    </a>
+  </install>
 ```
 
 ### What if the app is already installed?
@@ -170,6 +173,7 @@ Rendering the app name, origin, or icon in the install element would provide an 
 We believe it's worth it to solve these problems, but don't think it should delay gathering initial feedback.
 
 ### Potential Additional Attributes
+
 - `manifesturl`: Link to the manifest file
 - `includeicon`: If specified, fetches and renders the app's icon (in addition to the install icon)
 
@@ -231,19 +235,6 @@ User agents will need to consider how to handle very long words, including appro
 
 Alternatives
 ------------
-
-* mkwst - As discussed above, the [Web Install API][api] proposal offers developers great flexibility in
-  the ways in which they bring users into an installation flow. In my opinion, these (real!)
-  benefits to developers are outweighed by the stronger guarantees around a user's intentions
-  that we can provide via the user agent mediated approach proposed here. Particularly in this
-  case, where we've inculcated an "Install" button model through the development of application
-  storefronts across platforms, it seems quite reasonable indeed to create a trustworthy version
-  of that model for the web.
-
-  (_I'd more broadly claim that it is_ generally _desirable to avoid imperative models that enable
-  developer-driven timing of prompt presentation when it's possible to create a user-driven model
-  for the same capability. We can dramatically increase signal-to-noise for users by leaning
-  heavily upon the clear communication of user intent embodied in the PEPC-style approach._)
 
 * Given that the behavior discussed above would support both installation and launching, depending
   on the application's installed state, some more generic name might be appropriate. `<pwa>` or
