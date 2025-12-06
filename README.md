@@ -4,8 +4,7 @@ User-Initiated Installation of a Web Application
 A Problem
 ---------
 
-Today, the process of initiating an installation flow is somewhat fragmented; each user agent has
-created a set of entry points, some more discoverable and intuitive than others.
+Today, the process of distributing and acquiring web applications is both fragmented and limited in capability. Each user agent has created a set of entry points, some more discoverable and intuitive than others. Furthermore, because installation is limited to the current page only, developers and users must jump through even more hoops to create a functional acquisition pipeline for other sites.
 
 The Proposal
 ----------
@@ -21,7 +20,7 @@ The element renders standardized text and iconography controlled by the user age
 <img alt='A button whose text reads "Install", with an icon signifying the action of installation.' src='./install-icon.png' width=200><br>
 
 ```html
-<install pageurl="https://music.youtube.com/"
+<install installurl="https://music.youtube.com/"
          manifestid="https://music.youtube.com/?source=pwa">
   [Fallback content goes here.]
 </install>
@@ -29,13 +28,23 @@ The element renders standardized text and iconography controlled by the user age
 
 ### Element attributes
 
-`pageurl` specifies the document to install. If unspecified, the current page will be installed.
+`installurl` specifies the document to install. If unspecified, the current site will be installed.
 
-`manifestid` is optional. If _unspecified_, the manifest referenced by the document at `pageurl` must have a custom id defined. If specified, it must match the computed id of the site to be installed.
+`manifestid` specifies the computed id of the document to install. If unspecified, the manifest referenced by the document at `installurl` must have a custom id defined. If specified, it must match the computed id of the site to be installed.
+
+#### Other valid element usages
+```html
+<!-- Install the current page. -->
+<install></install>
+
+<!-- The manifest file at installurl should contain an id. -->
+<install installurl="https://reddit.com/">
+</install>
+```
 
 ### Element behavior
 
-On click, the user agent can initiate their existing installation flow, such as:
+On click, the user agent can initiate their existing installation flow, such as showing a confirmation prompt:
 
 ![An installation prompt for `YouTube Music`.](./dialog-ytmusic.png)
 
@@ -46,7 +55,7 @@ If the user agent doesn't support installation, present a simple link:
 <img alt='A hyperlink reading "Launch YouTube Music".' src='./install-not-supported.png'>
 
 ```html
-  <install pageurl="https://music.youtube.com/"
+  <install installurl="https://music.youtube.com/"
            manifestid="https://music.youtube.com/?source=pwa">
     <a href="https://music.youtube.com/" target="_blank">
       Launch YouTube Music
@@ -56,24 +65,68 @@ If the user agent doesn't support installation, present a simple link:
 
 ### What if the app is already installed?
 
-The element can transform into a simple 'Launch'-style button, a highly requested feature from web developers. However, we must ensure developers cannot detect the change in the element's content to avoid fingerprinting concerns. This means being careful about side channels, particularly width.
+The user agent can transform the element into a simple 'Launch'-style button, a highly requested feature from web developers. When clicked, it should follow existing launch protocols.
 
 <img alt='A button whose text reads "Launch YouTube Music, from music.youtube.com", with an icon signifying the action of launching.' src='./launch-simple.png' width=200>
 
-## Developer tools
+User agents must take care with side channels such as width, as developers must not be able to detect the change in the element's content to avoid fingerprinting concerns.
+
+## Error handling / debuggability
 
 The element offers event-driven hooks allowing developers to understand users' interactions, reusing [`InPagePermissionMixin`][mixin] concepts like `promptaction`, `promptdismiss`, and `validationstatuschange` events, `isValid` and `invalidReason` attributes, etc. Additional events will be needed for failures related to manifest fetching/parsing.
 
 Validation errors could include violations of the generally applicable [presentation restrictions][security] for permission elements, as well as data validation errors when processing the referenced manifest.
 
 That said, developers wouldn't actually need to hook into any of those attributes for the simplest
-cases: `<install></install>` and `<install pageurl="..."></install>` would be sufficient for straightforward use cases of offering installation.
+cases: `<install></install>` and `<install installurl="..."></install>` would be sufficient for straightforward use cases of offering installation.
 
 [pepc]: https://github.com/WICG/PEPC/
 [geolocation]: https://github.com/WICG/PEPC/blob/main/geolocation_explainer.md
 [mixin]: https://wicg.github.io/PEPC/permission-elements.html#permission-mixin
 [security]: https://github.com/WICG/PEPC/blob/main/explainer.md#security-abuse
 
+Design considerations
+--------------
+
+### Install by manifesturl?
+
+Should the `installurl` attribute be supplemented with, or even replaced by, a `manifesturl` attribute? e.g. https://youtube.com/manifest.webmanifest
+
+Issue - [Specifying manifests vs documents](https://github.com/WICG/install-element/issues/5#issuecomment-3613279651)
+
+Functionally, installing from a manifest file directly avoids the overhead of loading the document at `installurl` in the background, and makes it more feasible to render custom information in the button. It also reduces complexity around manifest id requirements, as the manifest file is the source of truth for an app's identity. However, it introduces a variety of additional concerns -
+
+* **Preventing manifest spoofing** - Manifests are not required to be served from the same origin as the site (e.g. CDN). To avoid spoofing, we'd need to load `start_url` in the background, and verify its manifest matches the provided attribute value. Alternatively, we could require that manifests be on the same origin.
+* **Service worker registration** - Presently, service workers are registered on page load, and the manifest file does not contain a static reference to the service worker. One possibility is requiring a `serviceworker` field in the manifest. Alternatively, if the user agent chooses to launch the app immediately after installation, that may be sufficient as the service worker would be registered on page load.
+* **Stale manifest urls** - Generally, manifest urls seem more likely to change than installurls. To avoid stale manifests, developers would need to periodically query the HTML.
+* **Manifest Parsing** - We can parse the manifest by setting the `documentUrl` as the origin of the `manifesturl`, but we'll likely need to change the manifest spec more.
+
+Realistically we need developers to tell us what they want/need here. (In fact, we've already received [feedback](https://github.com/WICG/install-element/issues/1) that supporting both is desirable.) In the meantime, our proposal remains to start out with `installurl` and `manifestid` to begin gathering feedback, and allow time to continue iterating on these considerations.
+
+### Should manifest id be required?
+
+Issue - [Should we require manifestid](https://github.com/WICG/install-element/issues/6)
+
+Under the current proposal, the `manifestid` attribute is optional. We have no plans to make it a required attribute. However, if the developer does not provide this attribute, the provided `installurl` must point to a manifest file with an `id` field.
+
+Our guiding principle here is if the developer is not required to provide a manifest id, the user agent must always fetch the install url, then the manifest. This will likely fall out of the decisions around what url we use to install.
+
+### Custom Information in Button
+
+Rendering the app name, origin, or icon in the install element would provide an even stronger signal of user intent, but also introduces a variety of complications, such as:
+- **Performance:** When and how to get the information to show in the button
+- **UX:** Introduce a two-tap flow? (tap 1 loads information, tap 2 installs)
+- **Security:** Long app names. See [handling very long app names](#what-if-this-is-an-app-for-a-donaudampfschifffahrtsgesellschaftskapitän).
+- **Styling/Accessibility:** App icon contrast ratio. Button layout/width.
+
+If user agents wish to include custom information, they should take these into consideration.
+
+It's also worth noting that the button's exact rendering may eventually be useful ambiguity, as it would allow each user agent to decide what information they need, and how to mitigate the concerns outlined above.
+
+### Potential Additional Attributes
+
+- `manifesturl`: Link to the manifest file
+- `includeicon`: If specified, fetches and renders the app's icon (in addition to the install icon)
 
 Please give me some IDL and technical detail!
 --------------------------------------------------
@@ -85,7 +138,7 @@ Ok. Here you go:
 interface HTMLInstallElement : HTMLElement {
   [HTMLConstructor] constructor();
 
-  [CEReactions, ReflectURL] attribute USVString pageurl;
+  [CEReactions, ReflectURL] attribute USVString installurl;
   [CEReactions] attribute USVString manifestid;
 };
 HTMLInstallElement implements InPagePermissionMixin;
@@ -123,7 +176,7 @@ the user making some decision, leading to either a `promptdismiss` or `promptact
 on the element.
 
 The element hooks directly into the backend of navigator.install. When clicked, it will 
-load the `pageurl` in the background to obtain the web application manifest and related 
+load the `installurl` in the background to obtain the web application manifest and related 
 resources needed for the installation dialog. The steps here will be similar to those defined 
 for [the "manifest" link type][manifest-fetch], fetching and processing the manifest according 
 to its [processing steps][manifest-process]. If we get a valid manifest back, the installation 
@@ -134,28 +187,6 @@ error appropriately.
 [activate-geo]: https://wicg.github.io/PEPC/permission-elements.html#ref-for-dom-inpagepermissionmixin-features-slot%E2%91%A1%E2%93%AA
 [manifest-fetch]: https://html.spec.whatwg.org/multipage/links.html#link-type-manifest:linked-resource-fetch-setup-steps
 [manifest-process]: https://html.spec.whatwg.org/multipage/links.html#link-type-manifest:process-the-linked-resource
-
-Design Considerations
---------------
-
-The initial proposed design is deliberately simple, as the primary goal is to gather usage data.
-
-There is certainly value in including app-specific text and iconography, but it introduces a variety of concerns enumerated below.
-
-It's worth noting that the button's exact rendering may eventually be useful ambiguity from a standards perspective. It would allow each user agent to decide what information they need, and how to address the above concerns.
-
-### Custom Information in Button
-
-Rendering the app name, origin, or icon in the install element would provide an even stronger signal of user intent, but also introduces a variety of complications, such as:
-- **Performance:** When and how to get the information to show in the button
-- **UX:** Whether to use a two-tap flow (tap 1 loads info, tap 2 installs)
-- **Security:** Long app names. See [handling very long app names](#what-if-this-is-an-app-for-a-donaudampfschifffahrtsgesellschaftskapitän). Is the secondary installation confirmation prompt still necessary?
-- **Styling/Accessibility:** App icon contrast ratios. Button layout/width.
-
-### Potential Additional Attributes
-
-- `manifesturl`: Link to the manifest file
-- `includeicon`: If specified, fetches and renders the app's icon (in addition to the install icon)
 
 Security & Privacy
 ------------------
