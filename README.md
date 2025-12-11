@@ -19,18 +19,18 @@ The element renders standardized text and iconography controlled by the user age
 
 <img alt='A button whose text reads "Install", with an icon signifying the action of installation.' src='./install-icon.png' width=200><br>
 
+### Element attributes
+
+`installurl` specifies the document to install. If unspecified, the current site will be installed.
+
+`manifestid` specifies the computed id of the document to install. If unspecified, the manifest referenced by the document at `installurl` must have a custom id defined. If specified, it must match the computed id of the site to be installed.
+
 ```html
 <install installurl="https://music.youtube.com/"
          manifestid="https://music.youtube.com/?source=pwa">
   [Fallback content goes here.]
 </install>
 ```
-
-### Element attributes
-
-`installurl` specifies the document to install. If unspecified, the current site will be installed.
-
-`manifestid` specifies the computed id of the document to install. If unspecified, the manifest referenced by the document at `installurl` must have a custom id defined. If specified, it must match the computed id of the site to be installed.
 
 #### Other valid element usages
 ```html
@@ -107,7 +107,7 @@ Realistically we need developers to tell us what they want/need here. (In fact, 
 
 Issue - [Should we require manifestid](https://github.com/WICG/install-element/issues/6)
 
-Under the current proposal, the `manifestid` attribute is optional. We have no plans to make it a required attribute. However, if the developer does not provide this attribute, the provided `installurl` must point to a manifest file with an `id` field.
+Under the current install by `installurl` proposal, the `manifestid` attribute is optional. However, if the developer does not provide this attribute, then `installurl` must point to a manifest file with an `id` field.
 
 Our guiding principle here is if the developer is not required to provide a manifest id, the user agent must always fetch the install url, then the manifest. This will likely fall out of the decisions around what url we use to install.
 
@@ -222,6 +222,16 @@ User agents will need to consider how to handle very long words, including appro
 [german]: https://en.wiktionary.org/wiki/Donaudampfschifffahrtsgesellschaftskapit%C3%A4n
 [url-display]: https://chromium.googlesource.com/chromium/src/+/HEAD/docs/security/url_display_guidelines/url_display_guidelines.md
 
+Open Questions
+------------
+
+### Will this work with WebXR/WebGL scenarios?
+
+No, this is a known limitation of the element proposal.
+
+### Are iFrames supported?
+
+No, for security reasons this should be restricted to top level browsing contexts.
 
 Alternatives
 ------------
