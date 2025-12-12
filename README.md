@@ -65,11 +65,11 @@ If the user agent doesn't support installation, present a simple link:
 
 ### What if the app is already installed?
 
-The user agent can transform the element into a simple 'Launch'-style button, a highly requested feature from web developers. When clicked, it should follow existing launch protocols.
+The user agent can render the element as a simple 'Launch'-style button, a highly requested feature from web developers. When clicked, it should follow established launch algorithms such as [launch handler](https://developer.mozilla.org/en-US/docs/Web/API/Launch_Handler_API).
 
 <img alt='A button whose text reads "Launch YouTube Music, from music.youtube.com", with an icon signifying the action of launching.' src='./launch-simple.png' width=200>
 
-User agents must take care with side channels such as width, as developers must not be able to detect the change in the element's content to avoid fingerprinting concerns.
+User agents must must avoid exposing whether apps are installed to side-channel attacks. For eg. developers must not be able to detect apps are installed by measuring the size of the rendered install element. Exposing this information increases fingerprinting risk.
 
 ## Error handling / debuggability
 
@@ -94,11 +94,11 @@ Should the `installurl` attribute be supplemented with, or even replaced by, a `
 
 Issue - [Specifying manifests vs documents](https://github.com/WICG/install-element/issues/5#issuecomment-3613279651)
 
-Functionally, installing from a manifest file directly avoids the overhead of loading the document at `installurl` in the background, and makes it more feasible to render custom information in the button. It also reduces complexity around manifest id requirements, as the manifest file is the source of truth for an app's identity. However, it introduces a variety of additional concerns -
+Installing from a manifest file directly avoids the overhead of loading the document at `installurl` in the background, and makes it possible to present app metadata in the button without a full page load. It also reduces complexity around manifest id requirements as the manifest file is the source of truth for an app's identity. However, it introduces a variety of additional concerns -
 
 * **Preventing manifest spoofing** - Manifests are not required to be served from the same origin as the site (e.g. CDN). To avoid spoofing, we'd need to load `start_url` in the background, and verify its manifest matches the provided attribute value. Alternatively, we could require that manifests be on the same origin.
 * **Service worker registration** - Presently, service workers are registered on page load, and the manifest file does not contain a static reference to the service worker. One possibility is requiring a `serviceworker` field in the manifest. Alternatively, if the user agent chooses to launch the app immediately after installation, that may be sufficient as the service worker would be registered on page load.
-* **Stale manifest urls** - Generally, manifest urls seem more likely to change than installurls. To avoid stale manifests, developers would need to periodically query the HTML.
+* **Stale manifest urls** - Generally, manifest urls are more likely to change than install urls. For example, a URL like youtube.com is unlikely to change anytime soon, whereas the manifest file is more likely to be renamed or moved. To avoid stale manifest urls, developers would need to periodically fetch the HTML and parse it to ensure the manifest is still in the expected location.
 * **Manifest Parsing** - We can parse the manifest by setting the `documentUrl` as the origin of the `manifesturl`, but we'll likely need to change the manifest spec more.
 
 Realistically we need developers to tell us what they want/need here. (In fact, we've already received [feedback](https://github.com/WICG/install-element/issues/1) that supporting both is desirable.) In the meantime, our proposal remains to start out with `installurl` and `manifestid` to begin gathering feedback, and allow time to continue iterating on these considerations.
